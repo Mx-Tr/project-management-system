@@ -5,7 +5,7 @@ export interface Task {
 	priority: 'Low' | 'Medium' | 'High';
 	status: 'Backlog' | 'InProgress' | 'Done';
 	assignee: Assignee;
-	boardId: number;
+	boardId?: number;
 	boardName: string;
 }
 

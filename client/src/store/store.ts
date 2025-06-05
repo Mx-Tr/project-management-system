@@ -1,12 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import boardsReducer from '../features/boards/boardsSlice';
-import tasksReducer from './tasksSlice';
+import tasksReducer from '../features/tasks/tasksSlice';
 
 export const store = configureStore({
-  reducer: {
-    boards: boardsReducer,
-    tasks: tasksReducer,
-  },
+	reducer: {
+		boards: boardsReducer,
+		tasks: tasksReducer,
+	},
 });
 
 export type RootState = ReturnType<typeof store.getState>;
