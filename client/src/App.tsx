@@ -3,7 +3,7 @@ import './App.css';
 import AppLayout from './components/Layout/AppLayout';
 import BoardPage from './features/boards/pages/BoardPage';
 import BoardsPage from './features/boards/pages/BoardsPage';
-import TaskPage from './features/tasks/TaskPage';
+import IssuesPage from './features/tasks/IssuesPage';
 
 function App() {
 	return (
@@ -12,10 +12,9 @@ function App() {
 				<Routes>
 					<Route path="/boards" element={<BoardsPage />} />
 					<Route path="/board/:id" element={<BoardPage />} />
-					<Route path="/issues" element={<TaskPage />} />
+					<Route path="/issues" element={<IssuesPage />} />
 					
-					{/*редирект или главную страницу по умолчанию */}
-					<Route path="/" element={<TaskPage />} />
+					<Route path="/" element={<IssuesPage />} />
 				</Routes>
 			</AppLayout>
 		</Router>
