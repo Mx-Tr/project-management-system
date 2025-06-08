@@ -3,8 +3,16 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { getBoards as fetchBoardsApi } from '../../features/boards/boardsApi';
 import type { User } from '../../types/User';
 import type { Board } from '../boards/types/Board';
-import { getUsers as fetchUsersApi, getTasks } from './taskApi';
+import {
+	createTask,
+	getUsers as fetchUsersApi,
+	getTasks,
+	getTasksOnBoard,
+	updateTask,
+} from './taskApi';
 import type { Task } from './types/Task';
+import type { UpdateTaskRequest } from './types/UpdateTaskRequest';
+import type { CreateTaskRequest } from './types/CreateTaskRequest';
 
 export interface TasksState {
 	tasks: Task[];
@@ -18,7 +26,7 @@ export interface TasksState {
 	error: string | null;
 	usersError: string | null;
 	boardsError: string | null;
-	currentBoardError: string | null;
+	currentBoardError: string | null,
 }
 
 const initialState: TasksState = {
@@ -36,6 +44,22 @@ const initialState: TasksState = {
 	currentBoardError: null,
 };
 
+// Получение задач на конкретной доске
+export const fetchTasksOnBoard = createAsyncThunk<
+	Task[],
+	number,
+	{ rejectValue: string }
+>('tasks/fetchTasksOnBoard', async (boardId, { rejectWithValue }) => {
+	try {
+		const data = await getTasksOnBoard(boardId);
+		return data;
+	} catch (error: any) {
+		return rejectWithValue(
+			error.message || `Ошибка запроса заданий для доски ${boardId}`
+		);
+	}
+});
+
 // получение всех задач
 export const fetchAllTasks = createAsyncThunk<
 	Task[],
@@ -43,10 +67,10 @@ export const fetchAllTasks = createAsyncThunk<
 	{ rejectValue: string }
 >('tasks/fetchAllTasks', async (_, { rejectWithValue }) => {
 	try {
-		const data = await getTasks(); // getTasks должна вернуть Task[]
+		const data = await getTasks();
 		return data;
 	} catch (error: any) {
-		return rejectWithValue(error.message || 'Ошибка получения заданий');
+		return rejectWithValue(error.message || 'Ошибка получения задач');
 	}
 });
 
@@ -74,15 +98,63 @@ export const fetchBoardsForTasksFilter = createAsyncThunk<
 		return data;
 	} catch (error: any) {
 		return rejectWithValue(
-			error.message || 'Ошибка получения проектов для фильтрации заданий'
+			error.message || 'Ошибка получения проектов для фильтрации задач'
 		);
 	}
 });
 
+// Создание новой задачи
+export const createNewTask = createAsyncThunk<
+	Task,
+	{ taskData: CreateTaskRequest },
+	{ rejectValue: string }
+>(
+	'tasks/createNewTask',
+	async ({ taskData }, { dispatch, rejectWithValue }) => {
+		try {
+			const newTask = await createTask(taskData);
+			// обновление задач
+			dispatch(fetchAllTasks());
+			dispatch(fetchTasksOnBoard(taskData.boardId));
+			return newTask;
+		} catch (error: any) {
+			return rejectWithValue(error.message || 'Ошибка создания задачи');
+		}
+	}
+);
+
+// Обновление задачи
+export const updateExistingTask = createAsyncThunk<
+	Task,
+	{ taskId: number; taskData: UpdateTaskRequest },
+	{ rejectValue: string }
+>(
+	'tasks/updateExistingTask',
+	async ({ taskId, taskData }, { dispatch, rejectWithValue }) => {
+		try {
+			const updatedTask = await updateTask(taskId, taskData);
+			// обновление задач
+			dispatch(fetchAllTasks());
+			if (updatedTask.boardId) {
+				dispatch(fetchTasksOnBoard(updatedTask.boardId));
+			}
+			return updatedTask;
+		} catch (error: any) {
+			return rejectWithValue(error.message || 'Ошибка обновления задачи');
+		}
+	}
+);
+
 const tasksSlice = createSlice({
 	name: 'tasks',
 	initialState,
-	reducers: {},
+	reducers: {
+		clearCurrentBoardTasks: (state) => {
+			state.currentBoardTasks = [];
+			state.currentBoardError = null;
+			state.loadingCurrentBoard = false;
+		},
+	},
 	extraReducers: (builder) => {
 		builder
 			.addCase(fetchAllTasks.pending, (state) => {
@@ -99,7 +171,7 @@ const tasksSlice = createSlice({
 			.addCase(fetchAllTasks.rejected, (state, action) => {
 				state.loading = false;
 				state.error =
-					action.payload ?? 'Незвестная ошибка получения заданий';
+					action.payload ?? 'Незвестная ошибка получения задач';
 			})
 			// fetchAllUsers
 			.addCase(fetchAllUsers.pending, (state) => {
@@ -132,8 +204,52 @@ const tasksSlice = createSlice({
 			.addCase(fetchBoardsForTasksFilter.rejected, (state, action) => {
 				state.loadingBoards = false;
 				state.boardsError = action.payload ?? 'Неизвестная ошибка';
+			})
+
+			// fetchTasksOnBoard
+			.addCase(fetchTasksOnBoard.pending, (state) => {
+				state.loadingCurrentBoard = true;
+				state.currentBoardError = null;
+			})
+			.addCase(
+				fetchTasksOnBoard.fulfilled,
+				(state, action: PayloadAction<Task[]>) => {
+					state.loadingCurrentBoard = false;
+					state.currentBoardTasks = action.payload;
+				}
+			)
+			.addCase(fetchTasksOnBoard.rejected, (state, action) => {
+				state.loadingCurrentBoard = false;
+				state.currentBoardError =
+					action.payload ??
+					'Неизвестная ошибка запроса задач для доски';
+			})
+
+			// createNewTask
+			.addCase(createNewTask.pending, (state) => {
+				state.loading = true;
+			})
+			.addCase(createNewTask.fulfilled, (state) => {
+				state.loading = false;
+			})
+			.addCase(createNewTask.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.payload ?? 'Ошибка создания задачи';
+			})
+
+			// updateExistingTask
+			.addCase(updateExistingTask.pending, (state) => {
+				state.loading = true;
+			})
+			.addCase(updateExistingTask.fulfilled, (state) => {
+				state.loading = false;
+			})
+			.addCase(updateExistingTask.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.payload ?? 'Ошибка обновления задачи';
 			});
 	},
 });
 
+export const { clearCurrentBoardTasks } = tasksSlice.actions;
 export default tasksSlice.reducer;

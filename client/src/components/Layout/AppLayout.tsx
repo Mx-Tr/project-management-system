@@ -1,8 +1,8 @@
-// src/components/Layout/AppLayout.tsx
 import { Layout } from 'antd';
 import React, { useState } from 'react';
+import type { Task } from '../../features/tasks/types/Task';
+import TaskFormModal from '../TaskForm/TaskFormModal';
 import HeaderComponent from './Header';
-// import TaskFormModal from '../TaskForm/TaskFormModal'; // Закомментировано, добавим позже
 
 const { Content } = Layout;
 
@@ -11,30 +11,32 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-	const [_isCreateTaskModalVisible, setIsCreateTaskModalVisible] =
-		useState(false);
+	const [isModalVisible, setIsModalVisible] = useState(false);
 
-	const handleOpenCreateTaskModal = () => {
-		setIsCreateTaskModalVisible(true);
+	const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
+	const handleOpenCreateModal = () => {
+		setEditingTask(undefined);
+		setIsModalVisible(true);
 	};
 
-	// const handleCloseCreateTaskModal = () => {
-	// 	setIsCreateTaskModalVisible(false);
-	// };
+	const handleCloseModal = () => {
+		setIsModalVisible(false);
+		setEditingTask(undefined);
+	};
 
 	return (
 		<Layout style={{ minHeight: '100vh' }}>
-			<HeaderComponent
-				onOpenCreateTaskModal={handleOpenCreateTaskModal}
-			/>
+			<HeaderComponent onOpenCreateTaskModal={handleOpenCreateModal} />
 			<Content style={{ padding: '24px', backgroundColor: '#f0f2f5' }}>
 				{children}
 			</Content>
 
-			{/* <TaskFormModal
-				visible={isCreateTaskModalVisible}
-				onClose={handleCloseCreateTaskModal}
-			/> */}
+			<TaskFormModal
+				visible={isModalVisible}
+				onClose={handleCloseModal}
+				task={editingTask}
+			/>
 		</Layout>
 	);
 };

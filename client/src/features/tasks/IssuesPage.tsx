@@ -4,6 +4,7 @@ import {
 	Button,
 	Col,
 	Input,
+	notification,
 	Row,
 	Select,
 	Space,
@@ -13,6 +14,8 @@ import {
 } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import TaskFormModal from '../../components/TaskForm/TaskFormModal';
 import type { Board } from '../../features/boards/types/Board';
 import {
 	fetchAllTasks,
@@ -22,13 +25,13 @@ import {
 import type { Assignee, Task } from '../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { User } from '../../types/User';
-// import TaskFormModal from '../../components/TaskForm/TaskFormModal';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const IssuesPage: React.FC = () => {
 	const dispatch: AppDispatch = useDispatch();
+	const navigate = useNavigate();
 	const {
 		tasks,
 		users,
@@ -41,8 +44,6 @@ const IssuesPage: React.FC = () => {
 		boardsError,
 	} = useSelector((state: RootState) => state.tasks);
 
-	const [isCreateTaskModalVisible, setIsCreateTaskModalVisible] =
-		useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedStatus, setSelectedStatus] = useState<string | undefined>(
 		undefined
@@ -54,18 +55,25 @@ const IssuesPage: React.FC = () => {
 		number | undefined
 	>(undefined);
 
+	const [isModalVisible, setIsModalVisible] = useState(false);
+	const [selectedTask, setSelectedTask] = useState<Task | undefined>(
+		undefined
+	);
+
 	useEffect(() => {
 		dispatch(fetchAllTasks());
 		dispatch(fetchAllUsers());
 		dispatch(fetchBoardsForTasksFilter());
 	}, [dispatch]);
 
-	const handleOpenCreateTaskModal = () => {
-		setIsCreateTaskModalVisible(true);
+	const handleOpenModal = (task?: Task) => {
+		setSelectedTask(task);
+		setIsModalVisible(true);
 	};
 
-	const handleCloseCreateTaskModal = () => {
-		setIsCreateTaskModalVisible(false);
+	const handleCloseModal = () => {
+		setIsModalVisible(false);
+		setSelectedTask(undefined);
 	};
 
 	const filteredTasks = useMemo(() => {
@@ -97,22 +105,25 @@ const IssuesPage: React.FC = () => {
 		selectedAssigneeId,
 	]);
 
+	const handleGoToBoardWithTask = (boardId: number, taskId: number) => {
+		// явная проверка, что boardId валидный
+		if (boardId > 0) {
+			navigate(`/board/${boardId}?openTask=${taskId}`);
+		} else {
+			notification.error({
+				message: 'Переход невозможен',
+				description: 'Задача не привязана к какой-либо доске.',
+			});
+		}
+	};
+
 	const columns: TableProps<Task>['columns'] = [
 		{
 			title: 'Название',
 			dataIndex: 'title',
 			key: 'title',
 			render: (text: string, record: Task) => (
-				<a
-					onClick={() =>
-						console.log(
-							'Открыть модалку редактирования для задачи:',
-							record.id
-						)
-					}
-				>
-					{text}
-				</a>
+				<a onClick={() => handleOpenModal(record)}>{text}</a>
 			),
 		},
 		{
@@ -144,10 +155,10 @@ const IssuesPage: React.FC = () => {
 				<Button
 					type="link"
 					onClick={() =>
-						console.log(
-							`Переход на доску ${record.boardId} для задачи ${record.id}`
-						)
+						record.boardId &&
+						handleGoToBoardWithTask(record.boardId, record.id)
 					}
+					disabled={!record.boardId}
 				>
 					Перейти на доску
 				</Button>
@@ -170,7 +181,6 @@ const IssuesPage: React.FC = () => {
 		);
 	}
 
-	// Можно отображать ошибки более гранулярно
 	if (error)
 		return (
 			<Alert
@@ -210,7 +220,7 @@ const IssuesPage: React.FC = () => {
 					<Title level={2}>Все задачи</Title>
 				</Col>
 				<Col>
-					<Button type="primary" onClick={handleOpenCreateTaskModal}>
+					<Button type="primary" onClick={() => handleOpenModal()}>
 						Создать задачу
 					</Button>
 				</Col>
@@ -287,13 +297,11 @@ const IssuesPage: React.FC = () => {
 				loading={loading}
 			/>
 
-			{/*
-      <TaskFormModal
-        visible={isCreateTaskModalVisible}
-        onClose={handleCloseCreateTaskModal}
-        // ... другие props
-      />
-      */}
+			<TaskFormModal
+				visible={isModalVisible}
+				onClose={handleCloseModal}
+				task={selectedTask}
+			/>
 		</div>
 	);
 };
