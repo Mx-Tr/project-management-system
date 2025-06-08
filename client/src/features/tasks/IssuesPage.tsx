@@ -20,11 +20,11 @@ import type { Board } from '../../features/boards/types/Board';
 import {
 	fetchAllTasks,
 	fetchAllUsers,
-	fetchBoardsForTasksFilter,
 } from '../../features/tasks/tasksSlice';
 import type { Assignee, Task } from '../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { User } from '../../types/User';
+import { fetchBoards } from '../boards/boardsSlice';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -32,17 +32,11 @@ const { Option } = Select;
 const IssuesPage: React.FC = () => {
 	const dispatch: AppDispatch = useDispatch();
 	const navigate = useNavigate();
-	const {
-		tasks,
-		users,
-		boards,
-		loading,
-		error,
-		loadingUsers,
-		usersError,
-		loadingBoards,
-		boardsError,
-	} = useSelector((state: RootState) => state.tasks);
+	const { tasks, users, loading, error, loadingUsers, usersError } =
+		useSelector((state: RootState) => state.tasks);
+	const { boards, loading: loadingBoards, error: boardsError } = useSelector(
+		(state: RootState) => state.boards
+	);
 
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedStatus, setSelectedStatus] = useState<string | undefined>(
@@ -63,7 +57,8 @@ const IssuesPage: React.FC = () => {
 	useEffect(() => {
 		dispatch(fetchAllTasks());
 		dispatch(fetchAllUsers());
-		dispatch(fetchBoardsForTasksFilter());
+		dispatch(fetchBoards());
+		// dispatch(fetchBoardsForTasksFilter());
 	}, [dispatch]);
 
 	const handleOpenModal = (task?: Task) => {

@@ -1,8 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { getBoards as fetchBoardsApi } from '../../features/boards/boardsApi';
 import type { User } from '../../types/User';
-import type { Board } from '../boards/types/Board';
 import {
 	createTask,
 	getUsers as fetchUsersApi,
@@ -18,14 +16,11 @@ export interface TasksState {
 	tasks: Task[];
 	currentBoardTasks: Task[];
 	users: User[];
-	boards: Board[];
 	loading: boolean;
 	loadingCurrentBoard: boolean;
 	loadingUsers: boolean;
-	loadingBoards: boolean;
 	error: string | null;
 	usersError: string | null;
-	boardsError: string | null;
 	currentBoardError: string | null;
 	contextBoardId: number | null;
 }
@@ -34,14 +29,11 @@ const initialState: TasksState = {
 	tasks: [],
 	currentBoardTasks: [],
 	users: [],
-	boards: [],
 	loading: false,
 	loadingCurrentBoard: false,
 	loadingUsers: false,
-	loadingBoards: false,
 	error: null,
 	usersError: null,
-	boardsError: null,
 	currentBoardError: null,
 	contextBoardId: null,
 };
@@ -53,8 +45,14 @@ export const fetchTasksOnBoard = createAsyncThunk<
 	{ rejectValue: string }
 >('tasks/fetchTasksOnBoard', async (boardId, { rejectWithValue }) => {
 	try {
-		const data = await getTasksOnBoard(boardId);
-		return data;
+		const tasksFromApi = await getTasksOnBoard(boardId);
+
+		const enrichedTasks = tasksFromApi.map((task) => ({
+			...task,
+			boardId: boardId,
+		}));
+
+		return enrichedTasks;
 	} catch (error: any) {
 		return rejectWithValue(
 			error.message || `Ошибка запроса заданий для доски ${boardId}`
@@ -87,21 +85,6 @@ export const fetchAllUsers = createAsyncThunk<
 		return data;
 	} catch (error: any) {
 		return rejectWithValue(error.message || 'Ошибка получения юзеров');
-	}
-});
-
-export const fetchBoardsForTasksFilter = createAsyncThunk<
-	Board[],
-	void,
-	{ rejectValue: string }
->('tasks/fetchBoardsForTasksFilter', async (_, { rejectWithValue }) => {
-	try {
-		const data = await fetchBoardsApi();
-		return data;
-	} catch (error: any) {
-		return rejectWithValue(
-			error.message || 'Ошибка получения проектов для фильтрации задач'
-		);
 	}
 });
 
@@ -194,21 +177,6 @@ const tasksSlice = createSlice({
 				state.loadingUsers = false;
 				state.usersError =
 					action.payload ?? 'Неизвестная ошибка получения юзеров';
-			})
-			.addCase(fetchBoardsForTasksFilter.pending, (state) => {
-				state.loadingBoards = true;
-				state.boardsError = null;
-			})
-			.addCase(
-				fetchBoardsForTasksFilter.fulfilled,
-				(state, action: PayloadAction<Board[]>) => {
-					state.loadingBoards = false;
-					state.boards = action.payload;
-				}
-			)
-			.addCase(fetchBoardsForTasksFilter.rejected, (state, action) => {
-				state.loadingBoards = false;
-				state.boardsError = action.payload ?? 'Неизвестная ошибка';
 			})
 
 			// fetchTasksOnBoard

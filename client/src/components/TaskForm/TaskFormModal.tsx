@@ -1,6 +1,7 @@
-import { Button, Form, Input, Modal, Select, notification } from 'antd';
-import React, { useEffect } from 'react';
+import { Button, Form, Input, Modal, Select, Spin, notification } from 'antd';
+import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
 	createNewTask,
 	updateExistingTask,
@@ -9,7 +10,6 @@ import type { CreateTaskRequest } from '../../features/tasks/types/CreateTaskReq
 import type { Task } from '../../features/tasks/types/Task';
 import type { UpdateTaskRequest } from '../../features/tasks/types/UpdateTaskRequest';
 import type { AppDispatch, RootState } from '../../store/store';
-import { useNavigate } from 'react-router-dom';
 
 const { Option } = Select;
 
@@ -30,31 +30,45 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 	const dispatch: AppDispatch = useDispatch();
 	const navigate = useNavigate();
 
-	const { users, boards, loadingUsers, loadingBoards } = useSelector(
+	const { users, loadingUsers } = useSelector(
 		(state: RootState) => state.tasks
+	);
+	const { boards, loading: loadingBoards } = useSelector(
+		(state: RootState) => state.boards
+	);
+
+	console.log(
+		'[TaskFormModal] Доски, полученные для дропдауна (из state.boards):',
+		boards
 	);
 
 	const isEditMode = !!task;
 
-	useEffect(() => {
-		if (visible) {
-			if (isEditMode) {
-				form.setFieldsValue({
-					title: task.title,
-					description: task.description,
-					boardId: task.boardId,
-					priority: task.priority,
-					status: task.status,
-					assigneeId: task.assignee?.id,
-				});
-			} else {
-				form.resetFields();
-				if (boardId) {
-					form.setFieldsValue({ boardId: boardId });
-				}
-			}
+	const initialFormValues = useMemo(() => {
+		if (isEditMode && task) {
+			console.log(
+				'[TaskFormModal] Установка initialValues для редактирования задачи ID:',
+				task.id
+			);
+			return {
+				title: task.title,
+				description: task.description,
+				boardId: task.boardId,
+				priority: task.priority,
+				status: task.status,
+				assigneeId: task.assignee?.id,
+			};
+		} else {
+			console.log(
+				'[TaskFormModal] Установка initialValues для создания новой задачи'
+			);
+			return {
+				priority: 'Medium',
+				status: 'Backlog',
+				boardId: boardId,
+			};
 		}
-	}, [visible, task, isEditMode, boardId, form]);
+	}, [task, isEditMode, boardId]);
 
 	const handleFinish = async (values: any) => {
 		try {
@@ -96,6 +110,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 		}
 	};
 
+	const canRenderForm = visible && boards.length > 0 && users.length > 0;
+
 	return (
 		<Modal
 			title={isEditMode ? 'Редактирование задачи' : 'Создание задачи'}
@@ -104,119 +120,134 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 			footer={null}
 			destroyOnHidden
 		>
-			<Form
-				form={form}
-				layout="vertical"
-				onFinish={handleFinish}
-				initialValues={{ priority: 'Medium', status: 'Backlog' }}
-			>
-				<Form.Item
-					name="title"
-					label="Название"
-					rules={[
-						{
-							required: true,
-							message: 'Пожалуйста, введите название!',
-						},
-					]}
+			{canRenderForm ? (
+				<Form
+					key={task ? `edit-${task.id}` : 'create'}
+					form={form}
+					layout="vertical"
+					onFinish={handleFinish}
+					initialValues={initialFormValues}
 				>
-					<Input />
-				</Form.Item>
-				<Form.Item
-					name="description"
-					label="Описание"
-					rules={[
-						{
-							required: true,
-							message: 'Пожалуйста, введите описание!',
-						},
-					]}
-				>
-					<Input.TextArea rows={4} />
-				</Form.Item>
-				<Form.Item
-					name="boardId"
-					label="Проект (Доска)"
-					rules={[
-						{
-							required: true,
-							message: 'Пожалуйста, выберите проект!',
-						},
-					]}
-				>
-					<Select
-						loading={loadingBoards}
-						placeholder="Выберите проект"
-						disabled={isEditMode}
+					<Form.Item
+						name="title"
+						label="Название"
+						rules={[
+							{
+								required: true,
+								message: 'Пожалуйста, введите название!',
+							},
+						]}
 					>
-						{boards.map((b) => (
-							<Option key={b.id} value={b.id}>
-								{b.name}
-							</Option>
-						))}
-					</Select>
-				</Form.Item>
-				<Form.Item
-					name="priority"
-					label="Приоритет"
-					rules={[{ required: true }]}
-				>
-					<Select>
-						<Option value="Low">Low</Option>
-						<Option value="Medium">Medium</Option>
-						<Option value="High">High</Option>
-					</Select>
-				</Form.Item>
-				<Form.Item
-					name="status"
-					label="Статус"
-					rules={[{ required: true }]}
-				>
-					<Select disabled={!isEditMode}>
-						<Option value="Backlog">Backlog</Option>
-						<Option value="InProgress">In Progress</Option>
-						<Option value="Done">Done</Option>
-					</Select>
-				</Form.Item>
-				<Form.Item
-					name="assigneeId"
-					label="Исполнитель"
-					rules={[
-						{
-							required: true,
-							message: 'Пожалуйста, выберите исполнителя!',
-						},
-					]}
-				>
-					<Select
-						loading={loadingUsers}
-						placeholder="Выберите исполнителя"
+						<Input />
+					</Form.Item>
+					<Form.Item
+						name="description"
+						label="Описание"
+						rules={[
+							{
+								required: true,
+								message: 'Пожалуйста, введите описание!',
+							},
+						]}
 					>
-						{users.map((u) => (
-							<Option key={u.id} value={u.id}>
-								{u.fullName}
-							</Option>
-						))}
-					</Select>
-				</Form.Item>
-				<Form.Item>
-					<Button type="primary" htmlType="submit">
-						{isEditMode ? 'Сохранить' : 'Создать'}
-					</Button>
-					<Button style={{ marginLeft: 8 }} onClick={onClose}>
-						Отмена
-					</Button>
-					{isEditMode && task?.boardId && (
-						<Button
-							type="link"
-							style={{ float: 'right' }}
-							onClick={handleGoToBoard}
+						<Input.TextArea rows={4} />
+					</Form.Item>
+					<Form.Item
+						name="boardId"
+						label="Проект (Доска)"
+						rules={[
+							{
+								required: true,
+								message: 'Пожалуйста, выберите проект!',
+							},
+						]}
+					>
+						<Select
+							loading={loadingBoards}
+							placeholder="Выберите проект"
+							disabled={isEditMode}
 						>
-							Перейти на доску
+							{boards.map((b) => (
+								<Option key={b.id} value={b.id}>
+									{b.name}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+					<Form.Item
+						name="priority"
+						label="Приоритет"
+						rules={[{ required: true }]}
+					>
+						<Select>
+							<Option value="Low">Low</Option>
+							<Option value="Medium">Medium</Option>
+							<Option value="High">High</Option>
+						</Select>
+					</Form.Item>
+					<Form.Item
+						name="status"
+						label="Статус"
+						rules={[{ required: true }]}
+					>
+						<Select disabled={!isEditMode}>
+							<Option value="Backlog">Backlog</Option>
+							<Option value="InProgress">In Progress</Option>
+							<Option value="Done">Done</Option>
+						</Select>
+					</Form.Item>
+					<Form.Item
+						name="assigneeId"
+						label="Исполнитель"
+						rules={[
+							{
+								required: true,
+								message: 'Пожалуйста, выберите исполнителя!',
+							},
+						]}
+					>
+						<Select
+							loading={loadingUsers}
+							placeholder="Выберите исполнителя"
+						>
+							{users.map((u) => (
+								<Option key={u.id} value={u.id}>
+									{u.fullName}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+					<Form.Item>
+						<Button type="primary" htmlType="submit">
+							{isEditMode ? 'Сохранить' : 'Создать'}
 						</Button>
-					)}
-				</Form.Item>
-			</Form>
+						<Button style={{ marginLeft: 8 }} onClick={onClose}>
+							Отмена
+						</Button>
+						{isEditMode && task?.boardId && (
+							<Button
+								type="link"
+								style={{ float: 'right' }}
+								onClick={handleGoToBoard}
+							>
+								Перейти на доску
+							</Button>
+						)}
+					</Form.Item>
+				</Form>
+			) : (
+				// Если данные еще грузятся, показываем спиннер
+				<div
+					style={{
+						display: 'flex',
+						justifyContent: 'center',
+						alignItems: 'center',
+						height: '200px',
+					}}
+				>
+					<Spin />
+				</div>
+			)}
 		</Modal>
 	);
 };

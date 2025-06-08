@@ -6,7 +6,6 @@ import TaskFormModal from '../../../components/TaskForm/TaskFormModal';
 import {
 	clearCurrentBoardTasks,
 	fetchAllUsers,
-	fetchBoardsForTasksFilter,
 	fetchTasksOnBoard,
 	setContextBoardId,
 } from '../../../features/tasks/tasksSlice';
@@ -32,6 +31,8 @@ const BoardPage: React.FC = () => {
 	const { boards: allBoards, loading: loadingBoards } = useSelector(
 		(state: RootState) => state.boards
 	);
+
+	console.log('[BoardPage] Список ВСЕХ досок из стора (state.boards):', allBoards);
 
 	const board = useMemo(
 		() => allBoards.find((b) => b.id === Number(id)),
@@ -64,10 +65,10 @@ const BoardPage: React.FC = () => {
 			dispatch(fetchTasksOnBoard(boardIdNumber));
 			dispatch(setContextBoardId(boardIdNumber));
 		}
-		if (allBoards.length === 0) {
-			dispatch(fetchBoards());
-		}
-		dispatch(fetchBoardsForTasksFilter());
+		// if (allBoards.length === 0) {
+		// 	dispatch(fetchBoards());
+		// }
+		dispatch(fetchBoards());
 		dispatch(fetchAllUsers());
 
 		return () => {

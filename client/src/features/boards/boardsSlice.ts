@@ -1,11 +1,10 @@
-// src/features/boards/boardsSlice.ts
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { getBoards } from './boardsApi'; // Путь к твоей API функции
+import { getBoards } from './boardsApi';
 import type { Board } from './types/Board';
 
 interface BoardsState {
-	boards: Board[]; // Используем тип Board
+	boards: Board[];
 	loading: boolean;
 	error: string | null;
 }
@@ -16,7 +15,7 @@ const initialState: BoardsState = {
 	error: null,
 };
 
-// Thunk для получения досок
+// получение досок
 export const fetchBoards = createAsyncThunk<
 	Board[],
 	void,
@@ -45,11 +44,15 @@ const boardsSlice = createSlice({
 				(state, action: PayloadAction<Board[]>) => {
 					state.loading = false;
 					state.boards = action.payload;
+
+					console.log('[boardsSlice] Доски успешно загружены в стор:', action.payload); 
 				}
 			)
 			.addCase(fetchBoards.rejected, (state, action) => {
 				state.loading = false;
 				state.error = action.payload ?? 'Unknown error';
+
+				console.error('[boardsSlice] Ошибка загрузки досок:', action.payload);
 			});
 	},
 });
