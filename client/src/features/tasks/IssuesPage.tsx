@@ -14,6 +14,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import PriorityTag from '../../components/Layout/PriorityTag';
 import TaskFormModal from '../../components/TaskForm/TaskFormModal';
 import type { Board } from '../../features/boards/types/Board';
 import { fetchAllTasks, fetchAllUsers } from '../../features/tasks/tasksSlice';
@@ -21,7 +22,6 @@ import type { Assignee, Task } from '../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { User } from '../../types/User';
 import { fetchBoards } from '../boards/boardsSlice';
-import PriorityTag from '../../components/Layout/PriorityTag';
 
 const { Option } = Select;
 
@@ -114,6 +114,7 @@ const IssuesPage: React.FC = () => {
 			title: 'Название',
 			dataIndex: 'title',
 			key: 'title',
+			width: '30%',
 			render: (text: string, record: Task) => (
 				<a onClick={() => handleOpenModal(record)}>{text}</a>
 			),
@@ -122,11 +123,13 @@ const IssuesPage: React.FC = () => {
 			title: 'Статус',
 			dataIndex: 'status',
 			key: 'status',
+			width: '15%',
 		},
 		{
 			title: 'Приоритет',
 			dataIndex: 'priority',
 			key: 'priority',
+			width: '15%',
 			render: (priority: Task['priority']) => (
 				<PriorityTag priority={priority} />
 			),
@@ -135,6 +138,7 @@ const IssuesPage: React.FC = () => {
 			title: 'Исполнитель',
 			dataIndex: 'assignee',
 			key: 'assignee',
+			width: '15%',
 			render: (assignee: Assignee | undefined) =>
 				assignee?.fullName || 'Не назначен',
 		},
@@ -142,10 +146,13 @@ const IssuesPage: React.FC = () => {
 			title: 'Доска',
 			dataIndex: 'boardName',
 			key: 'boardName',
+			width: '15%',
 		},
 		{
 			title: 'Действия',
 			key: 'actions',
+			width: '10%',
+			className: 'actions-column',
 			render: (_, record: Task) => (
 				<Button
 					type="link"
@@ -154,12 +161,23 @@ const IssuesPage: React.FC = () => {
 						handleGoToBoardWithTask(record.boardId, record.id)
 					}
 					disabled={!record.boardId}
+					style={{ padding: 0 }}
 				>
 					Перейти на доску
 				</Button>
 			),
 		},
 	];
+
+	const handleRowClick = (
+		event: React.MouseEvent<HTMLElement>,
+		record: Task
+	) => {
+		if ((event.target as Element).closest('.actions-column')) {
+			return;
+		}
+		handleOpenModal(record);
+	};
 
 	if (loading || loadingUsers || loadingBoards) {
 		return (
@@ -206,37 +224,37 @@ const IssuesPage: React.FC = () => {
 
 	return (
 		<div>
-			<Space
-				direction="vertical"
-				size="middle"
-				style={{ width: '100%', marginBottom: '24px' }}
+			<Row
+				justify="space-between"
+				align="middle"
+				style={{ marginBottom: '24px' }}
 			>
-				<Input.Search
-					placeholder="Поиск по названию задачи"
-					onSearch={(value) => setSearchQuery(value)}
-					onChange={(e) => setSearchQuery(e.target.value)}
-					style={{ width: '100%' }}
-					allowClear
-				/>
-				<Row gutter={16} style={{ width: '100%' }}>
-					<Col xs={24} sm={12} md={6}>
+				<Col>
+					<Input.Search
+						placeholder="Поиск по названию задачи"
+						onSearch={(value) => setSearchQuery(value)}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						style={{ width: 300 }}
+						allowClear
+					/>
+				</Col>
+				<Col>
+					<Space size="middle">
 						<Select
 							placeholder="Фильтр по статусу"
 							onChange={(value) => setSelectedStatus(value)}
-							style={{ width: '100%' }}
+							style={{ width: 200 }}
 							allowClear
 						>
 							<Option value="Backlog">Backlog</Option>
 							<Option value="InProgress">In Progress</Option>
 							<Option value="Done">Done</Option>
 						</Select>
-					</Col>
-					<Col xs={24} sm={12} md={6}>
 						<Select
 							placeholder="Фильтр по доске"
 							loading={loadingBoards}
 							onChange={(value) => setSelectedBoardId(value)}
-							style={{ width: '100%' }}
+							style={{ width: 300 }}
 							allowClear
 						>
 							{boards.map((board: Board) => (
@@ -245,13 +263,11 @@ const IssuesPage: React.FC = () => {
 								</Option>
 							))}
 						</Select>
-					</Col>
-					<Col xs={24} sm={12} md={6}>
 						<Select
 							placeholder="Фильтр по исполнителю"
 							loading={loadingUsers}
 							onChange={(value) => setSelectedAssigneeId(value)}
-							style={{ width: '100%' }}
+							style={{ width: 300 }}
 							allowClear
 							showSearch
 							filterOption={(input, option) =>
@@ -266,15 +282,24 @@ const IssuesPage: React.FC = () => {
 								</Option>
 							))}
 						</Select>
-					</Col>
-				</Row>
-			</Space>
+					</Space>
+				</Col>
+			</Row>
 
 			<Table
 				columns={columns}
 				dataSource={filteredTasks}
 				rowKey="id"
 				loading={loading}
+				onRow={(record) => {
+					return {
+						onClick: (event) => handleRowClick(event, record),
+					};
+				}}
+				pagination={{
+					showSizeChanger: true,
+					pageSizeOptions: ['10', '15', '20', '50', '100'],
+				}}
 			/>
 
 			<TaskFormModal
