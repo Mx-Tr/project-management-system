@@ -1,5 +1,5 @@
 import { Button, Form, Input, Modal, Select, Spin, notification } from 'antd';
-import React, { useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,6 +12,8 @@ import type { UpdateTaskRequest } from '../../features/tasks/types/UpdateTaskReq
 import type { AppDispatch, RootState } from '../../store/store';
 
 const { Option } = Select;
+
+const DRAFT_STORAGE_KEY = 'task-form-draft';
 
 interface TaskFormModalProps {
 	visible: boolean;
@@ -37,27 +39,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 		(state: RootState) => state.boards
 	);
 
-
 	const isEditMode = !!task;
-
-	const initialFormValues = useMemo(() => {
-		if (isEditMode && task) {
-			return {
-				title: task.title,
-				description: task.description,
-				boardId: task.boardId,
-				priority: task.priority,
-				status: task.status,
-				assigneeId: task.assignee?.id,
-			};
-		} else {
-			return {
-				priority: 'Medium',
-				status: 'Backlog',
-				boardId: boardId,
-			};
-		}
-	}, [task, isEditMode, boardId]);
 
 	const handleFinish = async (values: any) => {
 		try {
@@ -82,6 +64,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 					createNewTask({ taskData: createData })
 				).unwrap();
 				notification.success({ message: 'Задача успешно создана' });
+				localStorage.removeItem(DRAFT_STORAGE_KEY);
 			}
 			onClose();
 		} catch (err: any) {
@@ -89,6 +72,40 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 				message: 'Произошла ошибка',
 				description: err.message,
 			});
+		}
+	};
+
+
+	useEffect(() => {
+		if (visible) {
+			if (isEditMode && task) {
+				form.setFieldsValue({
+					title: task.title,
+					description: task.description,
+					boardId: task.boardId,
+					priority: task.priority,
+					status: task.status,
+					assigneeId: task.assignee?.id,
+				});
+			} else {
+				form.resetFields();
+				const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+				if (savedDraft) {
+					try {
+						const draftData = JSON.parse(savedDraft);
+						form.setFieldsValue(draftData);
+					} catch (e) {
+						console.error('Ошибка разбора черновика:', e);
+						localStorage.removeItem(DRAFT_STORAGE_KEY);
+					}
+				}
+			}
+		}
+	}, [visible, isEditMode, task, form]);
+
+	const handleValuesChange = (_changedValues: any, allValues: any) => {
+		if (!isEditMode) {
+			localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(allValues));
 		}
 	};
 
@@ -115,7 +132,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 					form={form}
 					layout="vertical"
 					onFinish={handleFinish}
-					initialValues={initialFormValues}
+					onValuesChange={handleValuesChange}
 				>
 					<Form.Item
 						name="title"
@@ -150,6 +167,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 								message: 'Пожалуйста, выберите проект!',
 							},
 						]}
+						initialValue={boardId}
 					>
 						<Select
 							loading={loadingBoards}
@@ -167,6 +185,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 						name="priority"
 						label="Приоритет"
 						rules={[{ required: true }]}
+						initialValue="Medium"
 					>
 						<Select>
 							<Option value="Low">Low</Option>
@@ -174,17 +193,19 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 							<Option value="High">High</Option>
 						</Select>
 					</Form.Item>
-					<Form.Item
-						name="status"
-						label="Статус"
-						rules={[{ required: true }]}
-					>
-						<Select disabled={!isEditMode}>
-							<Option value="Backlog">Backlog</Option>
-							<Option value="InProgress">In Progress</Option>
-							<Option value="Done">Done</Option>
-						</Select>
-					</Form.Item>
+					{isEditMode && (
+						<Form.Item
+							name="status"
+							label="Статус"
+							rules={[{ required: true }]}
+						>
+							<Select>
+								<Option value="Backlog">Backlog</Option>
+								<Option value="InProgress">In Progress</Option>
+								<Option value="Done">Done</Option>
+							</Select>
+						</Form.Item>
+					)}
 					<Form.Item
 						name="assigneeId"
 						label="Исполнитель"

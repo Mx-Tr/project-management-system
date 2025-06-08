@@ -1,5 +1,5 @@
 // src/pages/BoardsPage/BoardsPage.tsx
-import { Alert, Button, Card, List, Spin, Typography } from 'antd';
+import { Alert, Button, Card, List, Spin } from 'antd';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { fetchBoards } from '../../../features/boards/boardsSlice';
 import type { Board } from '../../../features/boards/types/Board';
 import type { AppDispatch, RootState } from '../../../store/store';
 
-const { Title } = Typography;
 
 const BoardsPage: React.FC = () => {
 	const dispatch: AppDispatch = useDispatch();
@@ -16,7 +15,6 @@ const BoardsPage: React.FC = () => {
 	);
 
 	useEffect(() => {
-		// TODO: Добавить условие, чтобы не загружать каждый раз, если они уже есть и не устарели
 		dispatch(fetchBoards());
 	}, [dispatch]);
 
@@ -48,9 +46,6 @@ const BoardsPage: React.FC = () => {
 
 	return (
 		<div>
-			<Title level={2} style={{ marginBottom: '24px' }}>
-				Проекты
-			</Title>
 			<List
 				grid={{
 					gutter: 16,

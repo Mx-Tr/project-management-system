@@ -1,10 +1,10 @@
 import { Layout } from 'antd';
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import type { Task } from '../../features/tasks/types/Task';
+import type { RootState } from '../../store/store';
 import TaskFormModal from '../TaskForm/TaskFormModal';
 import HeaderComponent from './Header';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../store/store';
 
 const { Content } = Layout;
 

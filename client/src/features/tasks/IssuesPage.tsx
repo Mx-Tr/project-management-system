@@ -10,7 +10,6 @@ import {
 	Space,
 	Spin,
 	Table,
-	Typography,
 } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,7 +25,6 @@ import type { AppDispatch, RootState } from '../../store/store';
 import type { User } from '../../types/User';
 import { fetchBoards } from '../boards/boardsSlice';
 
-const { Title } = Typography;
 const { Option } = Select;
 
 const IssuesPage: React.FC = () => {
@@ -58,7 +56,6 @@ const IssuesPage: React.FC = () => {
 		dispatch(fetchAllTasks());
 		dispatch(fetchAllUsers());
 		dispatch(fetchBoards());
-		// dispatch(fetchBoardsForTasksFilter());
 	}, [dispatch]);
 
 	const handleOpenModal = (task?: Task) => {
@@ -206,21 +203,6 @@ const IssuesPage: React.FC = () => {
 
 	return (
 		<div>
-			<Row
-				justify="space-between"
-				align="middle"
-				style={{ marginBottom: '24px' }}
-			>
-				<Col>
-					<Title level={2}>Все задачи</Title>
-				</Col>
-				<Col>
-					<Button type="primary" onClick={() => handleOpenModal()}>
-						Создать задачу
-					</Button>
-				</Col>
-			</Row>
-
 			<Space
 				direction="vertical"
 				size="middle"
