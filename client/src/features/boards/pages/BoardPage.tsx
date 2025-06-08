@@ -1,6 +1,15 @@
 import type { DropResult } from '@hello-pangea/dnd';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
-import { Alert, Card, Col, Row, Spin, Tag, Typography } from 'antd';
+import {
+	Alert,
+	Card,
+	Col,
+	notification,
+	Row,
+	Spin,
+	Tag,
+	Typography,
+} from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -80,23 +89,46 @@ const BoardPage: React.FC = () => {
 	useEffect(() => {
 		const taskIdToOpen = searchParams.get('openTask');
 
-		if (taskIdToOpen && !loadingCurrentBoard) {
-			const allTasks = [
-				...currentBoardTasks.Backlog,
-				...currentBoardTasks.InProgress,
-				...currentBoardTasks.Done,
-			];
-			const taskToOpen = allTasks.find(
-				(task) => task.id === Number(taskIdToOpen)
-			);
-			if (taskToOpen) {
-				handleOpenModal(taskToOpen);
-			} else {
-				searchParams.delete('openTask');
-				setSearchParams(searchParams);
-			}
+		if (!taskIdToOpen) {
+			return;
 		}
-	}, [loadingCurrentBoard, currentBoardTasks, searchParams, setSearchParams]);
+
+		if (loadingCurrentBoard) {
+			return;
+		}
+
+		const allTasks = [
+			...currentBoardTasks.Backlog,
+			...currentBoardTasks.InProgress,
+			...currentBoardTasks.Done,
+		];
+
+		if (allTasks.length === 0 && !currentBoardError) {
+			return;
+		}
+		const taskToOpen = allTasks.find(
+			(task) => task.id === Number(taskIdToOpen)
+		);
+
+		if (taskToOpen) {
+			handleOpenModal(taskToOpen);
+		} else {
+			notification.warning({
+				message: 'Задача не найдена',
+				description: `Задача с ID ${taskIdToOpen} не найдена на этой доске`,
+				placement: 'topRight',
+			});
+			searchParams.delete('openTask');
+			setSearchParams(searchParams);
+		}
+
+	}, [
+		loadingCurrentBoard,
+		currentBoardTasks,
+		searchParams,
+		setSearchParams,
+		currentBoardError,
+	]);
 
 	if (loadingCurrentBoard || (loadingBoards && allBoards.length === 0)) {
 		return (
