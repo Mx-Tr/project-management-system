@@ -1,3 +1,4 @@
+import type { DropResult } from '@hello-pangea/dnd';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { User } from '../../types/User';
@@ -7,12 +8,11 @@ import {
 	getTasks,
 	getTasksOnBoard,
 	updateTask,
+	updateTaskStatus as updateTaskStatusApi,
 } from './taskApi';
 import type { CreateTaskRequest } from './types/CreateTaskRequest';
 import type { Task } from './types/Task';
 import type { UpdateTaskRequest } from './types/UpdateTaskRequest';
-import { updateTaskStatus as updateTaskStatusApi } from './taskApi';
-import type { DropResult } from '@hello-pangea/dnd';
 
 export interface GroupedTasks {
 	Backlog: Task[];
@@ -282,9 +282,33 @@ const tasksSlice = createSlice({
 			.addCase(updateExistingTask.pending, (state) => {
 				state.loading = true;
 			})
-			.addCase(updateExistingTask.fulfilled, (state) => {
-				state.loading = false;
-			})
+.addCase(
+				updateExistingTask.fulfilled,
+				(state, action: PayloadAction<Task>) => {
+					state.loading = false;
+					const updatedTask = action.payload;
+
+					const taskIndex = state.tasks.findIndex(
+						(task) => task.id === updatedTask.id
+					);
+					if (taskIndex !== -1) {
+						state.tasks[taskIndex] = updatedTask;
+					}
+
+					Object.keys(state.currentBoardTasks).forEach((status) => {
+						const key = status as keyof GroupedTasks;
+						state.currentBoardTasks[key] = state.currentBoardTasks[
+							key
+						].filter((task) => task.id !== updatedTask.id);
+					});
+
+					const newStatusKey =
+						updatedTask.status as keyof GroupedTasks;
+					if (state.currentBoardTasks[newStatusKey]) {
+						state.currentBoardTasks[newStatusKey].push(updatedTask);
+					}
+				}
+			)
 			.addCase(updateExistingTask.rejected, (state, action) => {
 				state.loading = false;
 				state.error = action.payload ?? 'Ошибка обновления задачи';
