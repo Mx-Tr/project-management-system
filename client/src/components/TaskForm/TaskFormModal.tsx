@@ -51,7 +51,6 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 						taskData: updateData,
 					})
 				).unwrap();
-				notification.success({ message: 'Задача успешно обновлена' });
 			} else {
 				const createData: CreateTaskRequest = {
 					title: values.title,
@@ -68,10 +67,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 			}
 			onClose();
 		} catch (err: any) {
-			notification.error({
-				message: 'Произошла ошибка',
-				description: err.message,
-			});
+console.error('Ошибка отправки формы:', err);
 		}
 	};
 

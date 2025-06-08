@@ -153,7 +153,7 @@ export const updateExistingTask = createAsyncThunk<
 // обновления статуса задачи
 export const updateTaskStatus = createAsyncThunk<
 	Task,
-	{ taskId: number; status: string }, // Аргументы
+	{ taskId: number; status: string },
 	{ rejectValue: string }
 >('tasks/updateTaskStatus', async ({ taskId, status }, { rejectWithValue }) => {
 	try {
