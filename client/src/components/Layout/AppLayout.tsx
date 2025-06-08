@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import type { Task } from '../../features/tasks/types/Task';
 import TaskFormModal from '../TaskForm/TaskFormModal';
 import HeaderComponent from './Header';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store/store';
 
 const { Content } = Layout;
 
@@ -12,8 +14,9 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 	const [isModalVisible, setIsModalVisible] = useState(false);
-
 	const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
+	const contextBoardId = useSelector((state: RootState) => state.tasks.contextBoardId);
 
 	const handleOpenCreateModal = () => {
 		setEditingTask(undefined);
@@ -36,6 +39,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 				visible={isModalVisible}
 				onClose={handleCloseModal}
 				task={editingTask}
+				boardId={contextBoardId ?? undefined}
 			/>
 		</Layout>
 	);

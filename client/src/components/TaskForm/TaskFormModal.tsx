@@ -147,7 +147,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 					<Select
 						loading={loadingBoards}
 						placeholder="Выберите проект"
-						disabled={isEditMode || !!boardId}
+						disabled={isEditMode}
 					>
 						{boards.map((b) => (
 							<Option key={b.id} value={b.id}>

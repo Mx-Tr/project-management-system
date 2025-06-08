@@ -8,6 +8,7 @@ import {
 	fetchAllUsers,
 	fetchBoardsForTasksFilter,
 	fetchTasksOnBoard,
+	setContextBoardId,
 } from '../../../features/tasks/tasksSlice';
 import type { Task } from '../../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../../store/store';
@@ -58,8 +59,10 @@ const BoardPage: React.FC = () => {
 	};
 
 	useEffect(() => {
-		if (id) {
-			dispatch(fetchTasksOnBoard(Number(id)));
+		const boardIdNumber = Number(id);
+		if (boardIdNumber) {
+			dispatch(fetchTasksOnBoard(boardIdNumber));
+			dispatch(setContextBoardId(boardIdNumber));
 		}
 		if (allBoards.length === 0) {
 			dispatch(fetchBoards());
@@ -69,6 +72,7 @@ const BoardPage: React.FC = () => {
 
 		return () => {
 			dispatch(clearCurrentBoardTasks());
+			dispatch(setContextBoardId(null));
 		};
 	}, [id, dispatch, allBoards.length]);
 

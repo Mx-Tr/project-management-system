@@ -10,9 +10,9 @@ import {
 	getTasksOnBoard,
 	updateTask,
 } from './taskApi';
+import type { CreateTaskRequest } from './types/CreateTaskRequest';
 import type { Task } from './types/Task';
 import type { UpdateTaskRequest } from './types/UpdateTaskRequest';
-import type { CreateTaskRequest } from './types/CreateTaskRequest';
 
 export interface TasksState {
 	tasks: Task[];
@@ -26,7 +26,8 @@ export interface TasksState {
 	error: string | null;
 	usersError: string | null;
 	boardsError: string | null;
-	currentBoardError: string | null,
+	currentBoardError: string | null;
+	contextBoardId: number | null;
 }
 
 const initialState: TasksState = {
@@ -42,6 +43,7 @@ const initialState: TasksState = {
 	usersError: null,
 	boardsError: null,
 	currentBoardError: null,
+	contextBoardId: null,
 };
 
 // Получение задач на конкретной доске
@@ -154,6 +156,9 @@ const tasksSlice = createSlice({
 			state.currentBoardError = null;
 			state.loadingCurrentBoard = false;
 		},
+		setContextBoardId: (state, action: PayloadAction<number | null>) => {
+			state.contextBoardId = action.payload;
+		},
 	},
 	extraReducers: (builder) => {
 		builder
@@ -251,5 +256,5 @@ const tasksSlice = createSlice({
 	},
 });
 
-export const { clearCurrentBoardTasks } = tasksSlice.actions;
+export const { clearCurrentBoardTasks, setContextBoardId } = tasksSlice.actions;
 export default tasksSlice.reducer;
