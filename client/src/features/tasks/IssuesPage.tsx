@@ -16,14 +16,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import TaskFormModal from '../../components/TaskForm/TaskFormModal';
 import type { Board } from '../../features/boards/types/Board';
-import {
-	fetchAllTasks,
-	fetchAllUsers,
-} from '../../features/tasks/tasksSlice';
+import { fetchAllTasks, fetchAllUsers } from '../../features/tasks/tasksSlice';
 import type { Assignee, Task } from '../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { User } from '../../types/User';
 import { fetchBoards } from '../boards/boardsSlice';
+import PriorityTag from '../../components/Layout/PriorityTag';
 
 const { Option } = Select;
 
@@ -32,9 +30,11 @@ const IssuesPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { tasks, users, loading, error, loadingUsers, usersError } =
 		useSelector((state: RootState) => state.tasks);
-	const { boards, loading: loadingBoards, error: boardsError } = useSelector(
-		(state: RootState) => state.boards
-	);
+	const {
+		boards,
+		loading: loadingBoards,
+		error: boardsError,
+	} = useSelector((state: RootState) => state.boards);
 
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedStatus, setSelectedStatus] = useState<string | undefined>(
@@ -127,6 +127,9 @@ const IssuesPage: React.FC = () => {
 			title: 'Приоритет',
 			dataIndex: 'priority',
 			key: 'priority',
+			render: (priority: Task['priority']) => (
+				<PriorityTag priority={priority} />
+			),
 		},
 		{
 			title: 'Исполнитель',

@@ -26,6 +26,7 @@ import {
 import type { Task } from '../../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { fetchBoards } from '../boardsSlice';
+import PriorityTag from '../../../components/Layout/PriorityTag';
 
 const { Title, Text } = Typography;
 
@@ -121,7 +122,6 @@ const BoardPage: React.FC = () => {
 			searchParams.delete('openTask');
 			setSearchParams(searchParams);
 		}
-
 	}, [
 		loadingCurrentBoard,
 		currentBoardTasks,
@@ -272,12 +272,11 @@ const BoardPage: React.FC = () => {
 																<p>
 																	{task.title}
 																</p>
-																<Text type="secondary">
-																	Приоритет:{' '}
-																	{
+																<PriorityTag
+																	priority={
 																		task.priority
 																	}
-																</Text>
+																/>
 																<div>
 																	{task.assignee && (
 																		<Tag
