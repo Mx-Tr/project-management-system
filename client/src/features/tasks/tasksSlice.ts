@@ -1,6 +1,7 @@
 import type { DropResult } from '@hello-pangea/dnd';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import axios from 'axios';
 import type { User } from '../../types/User';
 import {
 	createTask,
@@ -55,17 +56,18 @@ export const fetchTasksOnBoard = createAsyncThunk<
 	Task[],
 	number,
 	{ rejectValue: string }
->('tasks/fetchTasksOnBoard', async (boardId, { rejectWithValue }) => {
+>('tasks/fetchTasksOnBoard', async (boardId, { rejectWithValue, signal }) => {
 	try {
-		const tasksFromApi = await getTasksOnBoard(boardId);
-
+		const tasksFromApi = await getTasksOnBoard(boardId, signal);
 		const enrichedTasks = tasksFromApi.map((task) => ({
 			...task,
 			boardId: boardId,
 		}));
-
 		return enrichedTasks;
 	} catch (error: any) {
+		if (axios.isCancel(error)) {
+			return rejectWithValue('Request Canceled');
+		}
 		return rejectWithValue(
 			error.message || `Ошибка запроса заданий для доски ${boardId}`
 		);
@@ -77,11 +79,14 @@ export const fetchAllTasks = createAsyncThunk<
 	Task[],
 	void,
 	{ rejectValue: string }
->('tasks/fetchAllTasks', async (_, { rejectWithValue }) => {
+>('tasks/fetchAllTasks', async (_, { rejectWithValue, signal }) => {
 	try {
-		const data = await getTasks();
+		const data = await getTasks(signal);
 		return data;
 	} catch (error: any) {
+		if (axios.isCancel(error)) {
+			return rejectWithValue('Request Canceled');
+		}
 		return rejectWithValue(error.message || 'Ошибка получения задач');
 	}
 });
@@ -91,11 +96,14 @@ export const fetchAllUsers = createAsyncThunk<
 	User[],
 	void,
 	{ rejectValue: string }
->('tasks/fetchAllUsers', async (_, { rejectWithValue }) => {
+>('tasks/fetchAllUsers', async (_, { rejectWithValue, signal }) => {
 	try {
-		const data = await fetchUsersApi();
+		const data = await fetchUsersApi(signal);
 		return data;
 	} catch (error: any) {
+		if (axios.isCancel(error)) {
+			return rejectWithValue('Request Canceled');
+		}
 		return rejectWithValue(error.message || 'Ошибка получения юзеров');
 	}
 });
@@ -214,8 +222,10 @@ const tasksSlice = createSlice({
 			)
 			.addCase(fetchAllTasks.rejected, (state, action) => {
 				state.loading = false;
-				state.error =
-					action.payload ?? 'Незвестная ошибка получения задач';
+				if (action.error.name !== 'AbortError') {
+					state.error =
+						action.payload ?? 'Незвестная ошибка получения задач';
+				}
 			})
 			// fetchAllUsers
 			.addCase(fetchAllUsers.pending, (state) => {
@@ -231,8 +241,10 @@ const tasksSlice = createSlice({
 			)
 			.addCase(fetchAllUsers.rejected, (state, action) => {
 				state.loadingUsers = false;
-				state.usersError =
-					action.payload ?? 'Неизвестная ошибка получения юзеров';
+				if (action.error.name !== 'AbortError') {
+					state.usersError =
+						action.payload ?? 'Неизвестная ошибка получения юзеров';
+				}
 			})
 
 			// fetchTasksOnBoard
@@ -261,9 +273,11 @@ const tasksSlice = createSlice({
 			)
 			.addCase(fetchTasksOnBoard.rejected, (state, action) => {
 				state.loadingCurrentBoard = false;
-				state.currentBoardError =
-					action.payload ??
-					'Неизвестная ошибка запроса задач для доски';
+				if (action.error.name !== 'AbortError') {
+					state.currentBoardError =
+						action.payload ??
+						'Неизвестная ошибка запроса задач для доски';
+				}
 			})
 
 			// createNewTask
@@ -282,7 +296,7 @@ const tasksSlice = createSlice({
 			.addCase(updateExistingTask.pending, (state) => {
 				state.loading = true;
 			})
-.addCase(
+			.addCase(
 				updateExistingTask.fulfilled,
 				(state, action: PayloadAction<Task>) => {
 					state.loading = false;

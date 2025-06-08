@@ -7,7 +7,6 @@ import { fetchBoards } from '../../../features/boards/boardsSlice';
 import type { Board } from '../../../features/boards/types/Board';
 import type { AppDispatch, RootState } from '../../../store/store';
 
-
 const BoardsPage: React.FC = () => {
 	const dispatch: AppDispatch = useDispatch();
 	const { boards, loading, error } = useSelector(
@@ -15,7 +14,11 @@ const BoardsPage: React.FC = () => {
 	);
 
 	useEffect(() => {
-		dispatch(fetchBoards());
+		const promise = dispatch(fetchBoards());
+
+		return () => {
+			promise.abort();
+		};
 	}, [dispatch]);
 
 	if (loading) {

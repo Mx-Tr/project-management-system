@@ -74,18 +74,23 @@ const BoardPage: React.FC = () => {
 
 	useEffect(() => {
 		const boardIdNumber = Number(id);
+		let tasksPromise: any;
+
 		if (boardIdNumber) {
-			dispatch(fetchTasksOnBoard(boardIdNumber));
+			tasksPromise = dispatch(fetchTasksOnBoard(boardIdNumber));
 			dispatch(setContextBoardId(boardIdNumber));
 		}
-		dispatch(fetchBoards());
-		dispatch(fetchAllUsers());
+		const boardsPromise = dispatch(fetchBoards());
+		const usersPromise = dispatch(fetchAllUsers());
 
 		return () => {
+			tasksPromise?.abort();
+			boardsPromise.abort();
+			usersPromise.abort();
 			dispatch(clearCurrentBoardTasks());
 			dispatch(setContextBoardId(null));
 		};
-	}, [id, dispatch, allBoards.length]);
+	}, [id, dispatch]);
 
 	useEffect(() => {
 		const taskIdToOpen = searchParams.get('openTask');

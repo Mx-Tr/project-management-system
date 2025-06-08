@@ -10,24 +10,11 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((request) => {
-	// console.log(
-	// 	'Starting Request:',
-	// 	request.method?.toUpperCase(),
-	// 	request.url,
-	// 	request.params ? JSON.stringify(request.params) : '',
-	// 	request.data ? JSON.stringify(request.data) : ''
-	// );
 	return request;
 });
 
 apiClient.interceptors.response.use(
 	(response) => {
-		// console.log(
-		// 	'Response:',
-		// 	response.status,
-		// 	response.config.url,
-		// 	response.data
-		// );
 		return response;
 	},
 	(error) => {
@@ -52,11 +39,16 @@ apiClient.interceptors.response.use(
 	}
 );
 
-export const getTasks = async (): Promise<Task[]> => {
+export const getTasks = async (signal?: AbortSignal): Promise<Task[]> => {
 	try {
-		const response = await apiClient.get<{ data: Task[] }>('/tasks');
+		const response = await apiClient.get<{ data: Task[] }>('/tasks', {
+			signal,
+		});
 		return response.data.data;
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			return [];
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
 				(error.response.data as any)?.message || 'Failed to fetch tasks'
@@ -66,11 +58,16 @@ export const getTasks = async (): Promise<Task[]> => {
 	}
 };
 
-export const getUsers = async (): Promise<User[]> => {
+export const getUsers = async (signal?: AbortSignal): Promise<User[]> => {
 	try {
-		const response = await apiClient.get<{ data: User[] }>('/users');
+		const response = await apiClient.get<{ data: User[] }>('/users', {
+			signal,
+		});
 		return response.data.data;
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			return [];
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
 				(error.response.data as any)?.message || 'Failed to fetch users'
@@ -80,14 +77,20 @@ export const getUsers = async (): Promise<User[]> => {
 	}
 };
 
-export const getTasksOnBoard = async (boardId: number): Promise<Task[]> => {
+export const getTasksOnBoard = async (
+	boardId: number,
+	signal?: AbortSignal
+): Promise<Task[]> => {
 	try {
-		// Ответ от /boards/{boardId} обернут в "data", а внутри массив задач
 		const response = await apiClient.get<{ data: Task[] }>(
-			`/boards/${boardId}`
+			`/boards/${boardId}`,
+			{ signal }
 		);
 		return response.data.data;
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			return [];
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
 				(error.response.data as any)?.message ||
@@ -99,23 +102,29 @@ export const getTasksOnBoard = async (boardId: number): Promise<Task[]> => {
 };
 
 export const createTask = async (
-	taskData: CreateTaskRequest
+	taskData: CreateTaskRequest,
+	signal?: AbortSignal
 ): Promise<Task> => {
 	try {
-		// Ответ на POST /tasks/create содержит { id: number }, для обновления стора нужна вся задача
 		const createResponse = await apiClient.post<{ data: { id: number } }>(
 			'/tasks/create',
-			taskData
+			taskData,
+			{ signal }
 		);
 		const newTaskId = createResponse.data.data.id;
 		const response = await apiClient.get<{ data: Task }>(
-			`/tasks/${newTaskId}`
+			`/tasks/${newTaskId}`,
+			{ signal }
 		);
 		return response.data.data;
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			throw error;
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
-				(error.response.data as any)?.message || 'Failed to create task'
+				(error.response.data as any)?.message ||
+					'Ошибка создания задачи'
 			);
 		}
 		throw error;
@@ -124,19 +133,24 @@ export const createTask = async (
 
 export const updateTask = async (
 	taskId: number,
-	taskData: UpdateTaskRequest
+	taskData: UpdateTaskRequest,
+	signal?: AbortSignal
 ): Promise<Task> => {
 	try {
-		// PUT /tasks/update/{taskId} возвращает только { message: "..." } так что запращиваем всю задачу
-		await apiClient.put(`/tasks/update/${taskId}`, taskData);
+		await apiClient.put(`/tasks/update/${taskId}`, taskData, { signal });
 		const response = await apiClient.get<{ data: Task }>(
-			`/tasks/${taskId}`
+			`/tasks/${taskId}`,
+			{ signal }
 		);
 		return response.data.data;
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			throw error;
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
-				(error.response.data as any)?.message || 'Failed to update task'
+				(error.response.data as any)?.message ||
+					'Ошибка обновления задачи'
 			);
 		}
 		throw error;
@@ -145,15 +159,23 @@ export const updateTask = async (
 
 export const updateTaskStatus = async (
 	taskId: number,
-	status: string
+	status: string,
+	signal?: AbortSignal
 ): Promise<void> => {
 	try {
-		await apiClient.put(`/tasks/updateStatus/${taskId}`, { status });
+		await apiClient.put(
+			`/tasks/updateStatus/${taskId}`,
+			{ status },
+			{ signal }
+		);
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			return;
+		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
 				(error.response.data as any)?.message ||
-					'Failed to update task status'
+					'Ошибка обновления статуса задачи'
 			);
 		}
 		throw error;

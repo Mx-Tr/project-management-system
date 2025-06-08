@@ -53,9 +53,15 @@ const IssuesPage: React.FC = () => {
 	);
 
 	useEffect(() => {
-		dispatch(fetchAllTasks());
-		dispatch(fetchAllUsers());
-		dispatch(fetchBoards());
+		const tasksPromise = dispatch(fetchAllTasks());
+		const usersPromise = dispatch(fetchAllUsers());
+		const boardsPromise = dispatch(fetchBoards());
+
+		return () => {
+			tasksPromise.abort();
+			usersPromise.abort();
+			boardsPromise.abort();
+		};
 	}, [dispatch]);
 
 	const handleOpenModal = (task?: Task) => {
