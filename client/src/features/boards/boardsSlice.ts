@@ -44,8 +44,6 @@ const boardsSlice = createSlice({
 				(state, action: PayloadAction<Board[]>) => {
 					state.loading = false;
 					state.boards = action.payload;
-
-					console.log('[boardsSlice] Доски успешно загружены в стор:', action.payload); 
 				}
 			)
 			.addCase(fetchBoards.rejected, (state, action) => {

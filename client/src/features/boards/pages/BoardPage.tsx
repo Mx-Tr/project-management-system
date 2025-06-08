@@ -1,3 +1,5 @@
+import type { DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Alert, Card, Col, Row, Spin, Tag, Typography } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,7 +9,10 @@ import {
 	clearCurrentBoardTasks,
 	fetchAllUsers,
 	fetchTasksOnBoard,
+	optimisticallyUpdateTaskStatus,
 	setContextBoardId,
+	updateTaskStatus,
+	type GroupedTasks,
 } from '../../../features/tasks/tasksSlice';
 import type { Task } from '../../../features/tasks/types/Task';
 import type { AppDispatch, RootState } from '../../../store/store';
@@ -31,8 +36,6 @@ const BoardPage: React.FC = () => {
 	const { boards: allBoards, loading: loadingBoards } = useSelector(
 		(state: RootState) => state.boards
 	);
-
-	console.log('[BoardPage] Список ВСЕХ досок из стора (state.boards):', allBoards);
 
 	const board = useMemo(
 		() => allBoards.find((b) => b.id === Number(id)),
@@ -65,9 +68,6 @@ const BoardPage: React.FC = () => {
 			dispatch(fetchTasksOnBoard(boardIdNumber));
 			dispatch(setContextBoardId(boardIdNumber));
 		}
-		// if (allBoards.length === 0) {
-		// 	dispatch(fetchBoards());
-		// }
 		dispatch(fetchBoards());
 		dispatch(fetchAllUsers());
 
@@ -80,12 +80,13 @@ const BoardPage: React.FC = () => {
 	useEffect(() => {
 		const taskIdToOpen = searchParams.get('openTask');
 
-		if (
-			taskIdToOpen &&
-			!loadingCurrentBoard &&
-			currentBoardTasks.length > 0
-		) {
-			const taskToOpen = currentBoardTasks.find(
+		if (taskIdToOpen && !loadingCurrentBoard) {
+			const allTasks = [
+				...currentBoardTasks.Backlog,
+				...currentBoardTasks.InProgress,
+				...currentBoardTasks.Done,
+			];
+			const taskToOpen = allTasks.find(
 				(task) => task.id === Number(taskIdToOpen)
 			);
 			if (taskToOpen) {
@@ -96,20 +97,6 @@ const BoardPage: React.FC = () => {
 			}
 		}
 	}, [loadingCurrentBoard, currentBoardTasks, searchParams, setSearchParams]);
-
-	const tasksByStatus = useMemo(() => {
-		const groupedTasks: { [key: string]: Task[] } = {
-			Backlog: [],
-			InProgress: [],
-			Done: [],
-		};
-		currentBoardTasks.forEach((task) => {
-			if (groupedTasks[task.status]) {
-				groupedTasks[task.status].push(task);
-			}
-		});
-		return groupedTasks;
-	}, [currentBoardTasks]);
 
 	if (loadingCurrentBoard || (loadingBoards && allBoards.length === 0)) {
 		return (
@@ -148,6 +135,35 @@ const BoardPage: React.FC = () => {
 		);
 	}
 
+	const handleDragEnd = (result: DropResult) => {
+		const { destination, source, draggableId } = result;
+
+		// Если бросили вне колонки
+		if (
+			!destination ||
+			(destination.droppableId === source.droppableId &&
+				destination.index === source.index)
+		) {
+			return;
+		}
+
+		// Если бросили на то же самое место
+		if (
+			destination.droppableId === source.droppableId &&
+			destination.index === source.index
+		) {
+			return;
+		}
+		dispatch(optimisticallyUpdateTaskStatus(result));
+
+		dispatch(
+			updateTaskStatus({
+				taskId: Number(draggableId),
+				status: destination.droppableId,
+			})
+		);
+	};
+
 	return (
 		<div>
 			<Title level={2} style={{ marginBottom: '24px' }}>
@@ -155,50 +171,111 @@ const BoardPage: React.FC = () => {
 			</Title>
 			<Text type="secondary">{board.description}</Text>
 
-			<Row gutter={16} style={{ marginTop: '24px' }}>
-				{KANBAN_COLUMNS.map((column) => (
-					<Col key={column.id} xs={24} sm={12} md={8}>
-						<Card
-							title={column.title}
-							style={{ backgroundColor: '#f7f7f7' }}
+			<DragDropContext onDragEnd={handleDragEnd}>
+				<Row gutter={16} style={{ marginTop: '24px' }}>
+					{KANBAN_COLUMNS.map((column) => (
+						<Droppable
+							key={column.id}
+							droppableId={column.id}
+							type="TASK"
 						>
-							<div
-								style={{
-									minHeight: '300px',
-								}}
-							>
-								{tasksByStatus[column.id] &&
-									tasksByStatus[column.id].map((task) => (
-										<Card
-											key={task.id}
-											hoverable
-											style={{ marginBottom: '10px' }}
-											onClick={() =>
-												handleOpenModal(task)
-											}
+							{(provided, snapshot) => (
+								<Col xs={24} sm={12} md={8}>
+									<Card
+										title={column.title}
+										style={{
+											backgroundColor:
+												snapshot.isDraggingOver
+													? '#e6f7ff'
+													: '#f7f7f7',
+											transition:
+												'background-color 0.2s ease',
+										}}
+									>
+										<div
+											ref={provided.innerRef}
+											{...provided.droppableProps}
+											style={{
+												minHeight: '300px',
+												padding: '8px',
+											}}
 										>
-											<p>{task.title}</p>
-											<Text type="secondary">
-												Приоритет: {task.priority}
-											</Text>
-											<div>
-												{task.assignee && (
-													<Tag
-														style={{
-															marginTop: '8px',
-														}}
-													>
-														{task.assignee.fullName}
-													</Tag>
-												)}
-											</div>
-										</Card>
-									))}
-							</div>
-						</Card>
-					</Col>
-				))}
-			</Row>
+											{currentBoardTasks[
+												column.id as keyof GroupedTasks
+											].map((task, index) => (
+												<Draggable
+													key={task.id}
+													draggableId={task.id.toString()}
+													index={index}
+												>
+													{(provided, snapshot) => (
+														<div
+															ref={
+																provided.innerRef
+															}
+															{...provided.draggableProps}
+															{...provided.dragHandleProps}
+															style={{
+																...provided
+																	.draggableProps
+																	.style,
+																userSelect:
+																	'none',
+																marginBottom:
+																	'10px',
+																boxShadow:
+																	snapshot.isDragging
+																		? '0 4px 8px rgba(0,0,0,0.1)'
+																		: 'none',
+															}}
+														>
+															<Card
+																hoverable
+																onClick={() =>
+																	handleOpenModal(
+																		task
+																	)
+																}
+															>
+																<p>
+																	{task.title}
+																</p>
+																<Text type="secondary">
+																	Приоритет:{' '}
+																	{
+																		task.priority
+																	}
+																</Text>
+																<div>
+																	{task.assignee && (
+																		<Tag
+																			style={{
+																				marginTop:
+																					'8px',
+																			}}
+																		>
+																			{
+																				task
+																					.assignee
+																					.fullName
+																			}
+																		</Tag>
+																	)}
+																</div>
+															</Card>
+														</div>
+													)}
+												</Draggable>
+											))}
+											{provided.placeholder}
+										</div>
+									</Card>
+								</Col>
+							)}
+						</Droppable>
+					))}
+				</Row>
+			</DragDropContext>
 
 			<TaskFormModal
 				visible={isModalVisible}

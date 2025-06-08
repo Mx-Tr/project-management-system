@@ -10,24 +10,24 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((request) => {
-	console.log(
-		'Starting Request:',
-		request.method?.toUpperCase(),
-		request.url,
-		request.params ? JSON.stringify(request.params) : '',
-		request.data ? JSON.stringify(request.data) : ''
-	);
+	// console.log(
+	// 	'Starting Request:',
+	// 	request.method?.toUpperCase(),
+	// 	request.url,
+	// 	request.params ? JSON.stringify(request.params) : '',
+	// 	request.data ? JSON.stringify(request.data) : ''
+	// );
 	return request;
 });
 
 apiClient.interceptors.response.use(
 	(response) => {
-		console.log(
-			'Response:',
-			response.status,
-			response.config.url,
-			response.data
-		);
+		// console.log(
+		// 	'Response:',
+		// 	response.status,
+		// 	response.config.url,
+		// 	response.data
+		// );
 		return response;
 	},
 	(error) => {
@@ -127,7 +127,7 @@ export const updateTask = async (
 	taskData: UpdateTaskRequest
 ): Promise<Task> => {
 	try {
-		// PUT /tasks/update/{taskId} возвращает только { message: "..." }, так что запращиваем всю задачу
+		// PUT /tasks/update/{taskId} возвращает только { message: "..." } так что запращиваем всю задачу
 		await apiClient.put(`/tasks/update/${taskId}`, taskData);
 		const response = await apiClient.get<{ data: Task }>(
 			`/tasks/${taskId}`
@@ -137,6 +137,23 @@ export const updateTask = async (
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
 				(error.response.data as any)?.message || 'Failed to update task'
+			);
+		}
+		throw error;
+	}
+};
+
+export const updateTaskStatus = async (
+	taskId: number,
+	status: string
+): Promise<void> => {
+	try {
+		await apiClient.put(`/tasks/updateStatus/${taskId}`, { status });
+	} catch (error) {
+		if (axios.isAxiosError(error) && error.response) {
+			throw new Error(
+				(error.response.data as any)?.message ||
+					'Failed to update task status'
 			);
 		}
 		throw error;

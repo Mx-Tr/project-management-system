@@ -37,19 +37,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 		(state: RootState) => state.boards
 	);
 
-	console.log(
-		'[TaskFormModal] Доски, полученные для дропдауна (из state.boards):',
-		boards
-	);
 
 	const isEditMode = !!task;
 
 	const initialFormValues = useMemo(() => {
 		if (isEditMode && task) {
-			console.log(
-				'[TaskFormModal] Установка initialValues для редактирования задачи ID:',
-				task.id
-			);
 			return {
 				title: task.title,
 				description: task.description,
@@ -59,9 +51,6 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 				assigneeId: task.assignee?.id,
 			};
 		} else {
-			console.log(
-				'[TaskFormModal] Установка initialValues для создания новой задачи'
-			);
 			return {
 				priority: 'Medium',
 				status: 'Backlog',
@@ -236,7 +225,6 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 					</Form.Item>
 				</Form>
 			) : (
-				// Если данные еще грузятся, показываем спиннер
 				<div
 					style={{
 						display: 'flex',

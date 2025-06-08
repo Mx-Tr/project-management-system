@@ -11,10 +11,18 @@ import {
 import type { CreateTaskRequest } from './types/CreateTaskRequest';
 import type { Task } from './types/Task';
 import type { UpdateTaskRequest } from './types/UpdateTaskRequest';
+import { updateTaskStatus as updateTaskStatusApi } from './taskApi';
+import type { DropResult } from '@hello-pangea/dnd';
+
+export interface GroupedTasks {
+	Backlog: Task[];
+	InProgress: Task[];
+	Done: Task[];
+}
 
 export interface TasksState {
 	tasks: Task[];
-	currentBoardTasks: Task[];
+	currentBoardTasks: GroupedTasks;
 	users: User[];
 	loading: boolean;
 	loadingCurrentBoard: boolean;
@@ -27,7 +35,11 @@ export interface TasksState {
 
 const initialState: TasksState = {
 	tasks: [],
-	currentBoardTasks: [],
+	currentBoardTasks: {
+		Backlog: [],
+		InProgress: [],
+		Done: [],
+	},
 	users: [],
 	loading: false,
 	loadingCurrentBoard: false,
@@ -130,17 +142,61 @@ export const updateExistingTask = createAsyncThunk<
 	}
 );
 
+// обновления статуса задачи
+export const updateTaskStatus = createAsyncThunk<
+	Task,
+	{ taskId: number; status: string }, // Аргументы
+	{ rejectValue: string }
+>('tasks/updateTaskStatus', async ({ taskId, status }, { rejectWithValue }) => {
+	try {
+		await updateTaskStatusApi(taskId, status);
+		return { taskId, status } as any;
+	} catch (err: any) {
+		return rejectWithValue(err.message);
+	}
+});
+
 const tasksSlice = createSlice({
 	name: 'tasks',
 	initialState,
 	reducers: {
 		clearCurrentBoardTasks: (state) => {
-			state.currentBoardTasks = [];
+			state.currentBoardTasks = { Backlog: [], InProgress: [], Done: [] };
 			state.currentBoardError = null;
 			state.loadingCurrentBoard = false;
 		},
 		setContextBoardId: (state, action: PayloadAction<number | null>) => {
 			state.contextBoardId = action.payload;
+		},
+		optimisticallyUpdateTaskStatus: (
+			state,
+			action: PayloadAction<DropResult>
+		) => {
+			const { source, destination, draggableId } = action.payload;
+
+			if (!destination) return;
+
+			const sourceColumn = source.droppableId as keyof GroupedTasks;
+			const destinationColumn =
+				destination.droppableId as keyof GroupedTasks;
+
+			// Находим и удаляем задачу из исходной колонки
+			const taskToMove = state.currentBoardTasks[sourceColumn].find(
+				(t) => t.id === Number(draggableId)
+			);
+			if (!taskToMove) return;
+
+			state.currentBoardTasks[sourceColumn] = state.currentBoardTasks[
+				sourceColumn
+			].filter((t) => t.id !== Number(draggableId));
+
+			// Добавляем задачу в новую колонку в нужную позицию
+			taskToMove.status = destinationColumn;
+			state.currentBoardTasks[destinationColumn].splice(
+				destination.index,
+				0,
+				taskToMove
+			);
 		},
 	},
 	extraReducers: (builder) => {
@@ -188,7 +244,19 @@ const tasksSlice = createSlice({
 				fetchTasksOnBoard.fulfilled,
 				(state, action: PayloadAction<Task[]>) => {
 					state.loadingCurrentBoard = false;
-					state.currentBoardTasks = action.payload;
+
+					// Группируем полученный плоский массив
+					state.currentBoardTasks =
+						action.payload.reduce<GroupedTasks>(
+							(acc, task) => {
+								if (!acc[task.status]) {
+									acc[task.status] = [];
+								}
+								acc[task.status].push(task);
+								return acc;
+							},
+							{ Backlog: [], InProgress: [], Done: [] }
+						);
 				}
 			)
 			.addCase(fetchTasksOnBoard.rejected, (state, action) => {
@@ -224,5 +292,9 @@ const tasksSlice = createSlice({
 	},
 });
 
-export const { clearCurrentBoardTasks, setContextBoardId } = tasksSlice.actions;
+export const {
+	clearCurrentBoardTasks,
+	setContextBoardId,
+	optimisticallyUpdateTaskStatus,
+} = tasksSlice.actions;
 export default tasksSlice.reducer;
