@@ -7,7 +7,6 @@ describe('PriorityTag', () => {
 		render(<PriorityTag priority="High" />);
 		const tagElement = screen.getByText('High');
 		expect(tagElement).toBeInTheDocument();
-		// Antd добавляет классы типа ant-tag-red
 		expect(tagElement.className).toContain('ant-tag-red');
 	});
 

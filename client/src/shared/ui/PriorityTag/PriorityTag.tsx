@@ -1,6 +1,6 @@
+import type { Task } from '@/entities/Task/model/types';
 import { Tag } from 'antd';
 import React from 'react';
-import type { Task } from '../../../features/tasks/types/Task';
 
 interface PriorityTagProps {
 	priority: Task['priority'];
