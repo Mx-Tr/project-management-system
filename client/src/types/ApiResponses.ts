@@ -1,5 +1,5 @@
-import type { Board } from '../features/boards/types/Board';
-import type { Task } from '../features/tasks/types/Task';
+import type { Board } from '../entities/Board/model/types';
+import type { Task } from '@/entities/Task/model/types';
 
 // Ответ на запрос всех досок
 export interface GetBoardsResponse {
