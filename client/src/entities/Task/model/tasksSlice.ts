@@ -2,8 +2,14 @@ import type { Task } from '@/entities/Task/model/types';
 import type { DropResult } from '@hello-pangea/dnd';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
-import type { User } from '../../../shared/types/User';
-import { createNewTask, fetchAllTasks, fetchAllUsers, fetchTasksOnBoard, updateExistingTask } from './tasksThunks';
+import type { User } from '@/shared/types/User.ts';
+import {
+	createNewTask,
+	fetchAllTasks,
+	fetchAllUsers,
+	fetchTasksOnBoard,
+	updateExistingTask,
+} from './tasksThunks';
 
 export interface GroupedTasks {
 	Backlog: Task[];
@@ -41,7 +47,6 @@ const initialState: TasksState = {
 	contextBoardId: null,
 };
 
-
 const tasksSlice = createSlice({
 	name: 'tasks',
 	initialState,
@@ -51,9 +56,11 @@ const tasksSlice = createSlice({
 			state.currentBoardError = null;
 			state.loadingCurrentBoard = false;
 		},
+		// Устанавливает ID доски, в контексте которой находится пользователь
 		setContextBoardId: (state, action: PayloadAction<number | null>) => {
 			state.contextBoardId = action.payload;
 		},
+		// обновляет статус задачи в UI сразу после drag-and-drop, не дожидаясь ответа от сервера
 		optimisticallyUpdateTaskStatus: (
 			state,
 			action: PayloadAction<DropResult>

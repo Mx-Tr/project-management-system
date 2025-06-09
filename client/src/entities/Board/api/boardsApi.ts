@@ -2,7 +2,6 @@ import type { Board } from '@/entities/Board/model/types';
 import axios from 'axios';
 import { apiClient } from '@/shared/api';
 
-
 export const getBoards = async (signal?: AbortSignal): Promise<Board[]> => {
 	try {
 		// ждём объект со свойством data с массивом Board[]
@@ -12,10 +11,8 @@ export const getBoards = async (signal?: AbortSignal): Promise<Board[]> => {
 		return response.data.data;
 	} catch (error) {
 		if (axios.isCancel(error)) {
-			console.log('Запрос на получение досок отменен');
 			return [];
 		}
-		console.error('Ошибка при загрузке досок:', error);
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(error.response.data?.message || error.message);
 		}

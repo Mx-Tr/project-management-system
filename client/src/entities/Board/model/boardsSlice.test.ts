@@ -1,6 +1,7 @@
-import boardsReducer, { fetchBoards } from '@/entities/Board/model/boardsSlice';
+import boardsReducer from '@/entities/Board/model/boardsSlice';
 import type { Board } from '@/entities/Board/model/types';
 import { describe, expect, it } from 'vitest';
+import { fetchBoards } from '@/entities/Board/model/boardsThunks.ts';
 
 describe('boardsSlice', () => {
 	const initialState = {
@@ -27,7 +28,10 @@ describe('boardsSlice', () => {
 			{ id: 1, name: 'Project A', description: 'Desc A', taskCount: 5 },
 			{ id: 2, name: 'Project B', description: 'Desc B', taskCount: 3 },
 		];
-		const action = { type: fetchBoards.fulfilled.type, payload: mockBoards };
+		const action = {
+			type: fetchBoards.fulfilled.type,
+			payload: mockBoards,
+		};
 		const state = boardsReducer(initialState, action);
 		expect(state.loading).toBe(false);
 		expect(state.boards).toEqual(mockBoards);

@@ -83,8 +83,8 @@ export const createNewTask = createAsyncThunk<
 		try {
 			const newTask = await createTask(taskData);
 			// обновление задач
-			dispatch(fetchAllTasks());
-			dispatch(fetchTasksOnBoard(taskData.boardId));
+			await dispatch(fetchAllTasks());
+			await dispatch(fetchTasksOnBoard(taskData.boardId));
 			return newTask;
 		} catch (error: any) {
 			return rejectWithValue(error.message || 'Ошибка создания задачи');
