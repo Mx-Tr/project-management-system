@@ -1,9 +1,7 @@
 import type { Board } from '@/entities/Board/model/types';
 import axios from 'axios';
+import { apiClient } from '@/shared/api';
 
-const apiClient = axios.create({
-	baseURL: 'http://localhost:8080/api/v1',
-});
 
 export const getBoards = async (signal?: AbortSignal): Promise<Board[]> => {
 	try {

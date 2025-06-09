@@ -1,11 +1,11 @@
-import type { CreateTaskRequest, Task, UpdateTaskRequest } from '@/entities/Task/model/types';
+import type {
+	CreateTaskRequest,
+	Task,
+	UpdateTaskRequest,
+} from '@/entities/Task/model/types';
 import type { User } from '@/shared/types/User';
 import axios from 'axios';
-
-
-const apiClient = axios.create({
-	baseURL: 'http://localhost:8080/api/v1',
-});
+import { apiClient } from '@/shared/api';
 
 apiClient.interceptors.request.use((request) => {
 	return request;
@@ -68,7 +68,8 @@ export const getUsers = async (signal?: AbortSignal): Promise<User[]> => {
 		}
 		if (axios.isAxiosError(error) && error.response) {
 			throw new Error(
-				(error.response.data as any)?.message || 'Ошибка запроса пользователей'
+				(error.response.data as any)?.message ||
+					'Ошибка запроса пользователей'
 			);
 		}
 		throw error;

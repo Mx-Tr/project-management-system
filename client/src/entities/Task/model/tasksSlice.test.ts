@@ -1,13 +1,12 @@
 import tasksReducer, {
 	clearCurrentBoardTasks,
-	fetchAllTasks,
-	fetchTasksOnBoard,
 	optimisticallyUpdateTaskStatus,
 	type TasksState,
 } from '@/entities/Task/model/tasksSlice';
 import type { Task } from '@/entities/Task/model/types';
 import type { DropResult } from '@hello-pangea/dnd';
 import { describe, expect, it } from 'vitest';
+import { fetchAllTasks, fetchTasksOnBoard } from './tasksThunks';
 
 // Начальное состояние для тестов
 const initialState: TasksState = {

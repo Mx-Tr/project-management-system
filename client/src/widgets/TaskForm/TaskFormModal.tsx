@@ -1,17 +1,9 @@
-import type { CreateTaskRequest, Task, UpdateTaskRequest } from '@/entities/Task/model/types';
-import { Button, Form, Input, Modal, Select, Spin, notification } from 'antd';
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import type { AppDispatch, RootState } from '@/app/store';
-import {
-	createNewTask,
-	updateExistingTask,
-} from '@/entities/Task/model/tasksSlice';
+import type { Task } from '@/entities/Task/model/types';
+import { Button, Form, Input, Modal, Select, Spin } from 'antd';
+import React from 'react';
+import { useTaskForm } from './lib/useTaskForm';
 
 const { Option } = Select;
-
-const DRAFT_STORAGE_KEY = 'task-form-draft';
 
 interface TaskFormModalProps {
 	visible: boolean;
@@ -20,116 +12,30 @@ interface TaskFormModalProps {
 	boardId?: number;
 }
 
-const TaskFormModal: React.FC<TaskFormModalProps> = ({
-	visible,
-	onClose,
-	task,
-	boardId,
-}) => {
-	const [form] = Form.useForm();
-	const dispatch: AppDispatch = useDispatch();
-	const navigate = useNavigate();
-
-	const { users, loadingUsers } = useSelector(
-		(state: RootState) => state.tasks
-	);
-	const { boards, loading: loadingBoards } = useSelector(
-		(state: RootState) => state.boards
-	);
-
-	const isEditMode = !!task;
-
-	const handleFinish = async (values: any) => {
-		try {
-			if (isEditMode) {
-				const updateData: UpdateTaskRequest = { ...values };
-				await dispatch(
-					updateExistingTask({
-						taskId: task.id,
-						taskData: updateData,
-					})
-				).unwrap();
-			} else {
-				const createData: CreateTaskRequest = {
-					title: values.title,
-					description: values.description,
-					priority: values.priority,
-					assigneeId: values.assigneeId,
-					boardId: values.boardId,
-				};
-				await dispatch(
-					createNewTask({ taskData: createData })
-				).unwrap();
-				notification.success({ message: 'Задача успешно создана' });
-				localStorage.removeItem(DRAFT_STORAGE_KEY);
-			}
-			onClose();
-		} catch (err: any) {
-			notification.error({
-				message: 'Произошла ошибка',
-				description: err.message,
-			});
-		}
-	};
-
-
-	useEffect(() => {
-		if (visible) {
-			if (isEditMode && task) {
-				form.setFieldsValue({
-					title: task.title,
-					description: task.description,
-					boardId: task.boardId,
-					priority: task.priority,
-					status: task.status,
-					assigneeId: task.assignee?.id,
-				});
-			} else {
-				form.resetFields();
-				const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-				if (savedDraft) {
-					try {
-						const draftData = JSON.parse(savedDraft);
-						form.setFieldsValue(draftData);
-					} catch (e) {
-						console.error('Ошибка разбора черновика:', e);
-						localStorage.removeItem(DRAFT_STORAGE_KEY);
-					}
-				}
-			}
-		}
-	}, [visible, isEditMode, task, form]);
-
-	const handleValuesChange = (_changedValues: any, allValues: any) => {
-		if (!isEditMode) {
-			localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(allValues));
-		}
-	};
-
-	const handleGoToBoard = () => {
-		if (task && task.boardId) {
-			onClose();
-			navigate(`/board/${task.boardId}`);
-		}
-	};
-
-	const canRenderForm = visible && boards.length > 0 && users.length > 0;
+const TaskFormModal: React.FC<TaskFormModalProps> = (props) => {
+	const { form, state, handlers } = useTaskForm(props);
 
 	return (
 		<Modal
-			title={isEditMode ? 'Редактирование задачи' : 'Создание задачи'}
-			open={visible}
-			onCancel={onClose}
+			title={
+				state.isEditMode ? 'Редактирование задачи' : 'Создание задачи'
+			}
+			open={props.visible}
+			onCancel={props.onClose}
 			footer={null}
 			destroyOnHidden
 		>
-			{canRenderForm ? (
+			{state.canRenderForm ? (
 				<Form
-					key={task ? `edit-${task.id}` : 'create'}
+					key={props.task ? `edit-${props.task.id}` : 'create'}
 					form={form}
 					layout="vertical"
-					onFinish={handleFinish}
-					onValuesChange={handleValuesChange}
+					onFinish={handlers.handleFinish}
+					onValuesChange={handlers.handleValuesChange}
+					initialValues={{
+						boardId: props.boardId,
+						priority: 'Medium',
+					}}
 				>
 					<Form.Item
 						name="title"
@@ -164,14 +70,13 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 								message: 'Пожалуйста, выберите проект!',
 							},
 						]}
-						initialValue={boardId}
 					>
 						<Select
-							loading={loadingBoards}
+							loading={state.loadingBoards}
 							placeholder="Выберите проект"
-							disabled={isEditMode}
+							disabled={state.isEditMode}
 						>
-							{boards.map((b) => (
+							{state.boards.map((b) => (
 								<Option key={b.id} value={b.id}>
 									{b.name}
 								</Option>
@@ -182,7 +87,6 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 						name="priority"
 						label="Приоритет"
 						rules={[{ required: true }]}
-						initialValue="Medium"
 					>
 						<Select>
 							<Option value="Low">Low</Option>
@@ -190,7 +94,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 							<Option value="High">High</Option>
 						</Select>
 					</Form.Item>
-					{isEditMode && (
+					{state.isEditMode && (
 						<Form.Item
 							name="status"
 							label="Статус"
@@ -214,10 +118,10 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 						]}
 					>
 						<Select
-							loading={loadingUsers}
+							loading={state.loadingUsers}
 							placeholder="Выберите исполнителя"
 						>
-							{users.map((u) => (
+							{state.users.map((u) => (
 								<Option key={u.id} value={u.id}>
 									{u.fullName}
 								</Option>
@@ -226,16 +130,19 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 					</Form.Item>
 					<Form.Item>
 						<Button type="primary" htmlType="submit">
-							{isEditMode ? 'Сохранить' : 'Создать'}
+							{state.isEditMode ? 'Сохранить' : 'Создать'}
 						</Button>
-						<Button style={{ marginLeft: 8 }} onClick={onClose}>
+						<Button
+							style={{ marginLeft: 8 }}
+							onClick={props.onClose}
+						>
 							Отмена
 						</Button>
-						{isEditMode && task?.boardId && (
+						{state.isEditMode && props.task?.boardId && (
 							<Button
 								type="link"
 								style={{ float: 'right' }}
-								onClick={handleGoToBoard}
+								onClick={handlers.handleGoToBoard}
 							>
 								Перейти на доску
 							</Button>

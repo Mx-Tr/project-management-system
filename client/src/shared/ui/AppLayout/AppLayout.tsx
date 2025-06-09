@@ -1,5 +1,5 @@
 import type { RootState } from '@/app/store';
-import type { Task } from '@/features/tasks/types/Task';
+import type { Task } from '@/entities/Task/model/types';
 import HeaderComponent from '@/widgets/AppHeader/Header';
 import TaskFormModal from '@/widgets/TaskForm/TaskFormModal';
 import { Layout } from 'antd';
@@ -16,7 +16,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
-	const contextBoardId = useSelector((state: RootState) => state.tasks.contextBoardId);
+	const contextBoardId = useSelector(
+		(state: RootState) => state.tasks.contextBoardId
+	);
 
 	const handleOpenCreateModal = () => {
 		setEditingTask(undefined);

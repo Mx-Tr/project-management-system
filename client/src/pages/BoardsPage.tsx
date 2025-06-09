@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../app/store';
-import { fetchBoards } from '../entities/Board/model/boardsSlice';
+import { fetchBoards } from '@/entities/Board/model/boardsThunks.ts';
 import type { Board } from '../entities/Board/model/types';
 
 const BoardsPage: React.FC = () => {
