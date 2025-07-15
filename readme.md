@@ -1,7 +1,7 @@
 # Project Management System (Мини-версия)
 
-> Моя клиент часть легковесной системы управления проектами с канбан-досками и списком задач
-![Project Demo GIF](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDNrbGtmOTNiN201Mmd2ZnlqN2t6cWQyM2Fvc2E4aHp4ZGlwZnNhYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OGuEKEUUGkIVeoqMTk/giphy.gif)
+### Моя клиент часть для мини-версии системы управления проектами
+> ![Project Demo GIF](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExaDNrbGtmOTNiN201Mmd2ZnlqN2t6cWQyM2Fvc2E4aHp4ZGlwZnNhYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OGuEKEUUGkIVeoqMTk/giphy.gif)
 
  ## Ключевые возможности
 
