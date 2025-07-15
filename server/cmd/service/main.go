@@ -1,4 +1,4 @@
-// @title Avito FE Tech Internship 2025 Wave 2 API
+// @title project-management-system API
 // @version 1.0
 // @description API для управления задачами и досками
 // @host localhost:8080

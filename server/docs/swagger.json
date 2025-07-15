@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "description": "API для управления задачами и досками",
-        "title": "Avito FE Tech Internship 2025 Wave 2 API",
+        "title": "project-management-system API",
         "contact": {},
         "version": "1.0"
     },

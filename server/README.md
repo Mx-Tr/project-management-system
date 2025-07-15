@@ -1,7 +1,3 @@
-# avito_fe_tech_internship_2025_wave2_backend
-
-API для тестового фронтенд задания "Мини-версия системы управления проектами(Project Management Systems)"
-
 ## Установка зависимостей
 
 ### Установка Docker и Make

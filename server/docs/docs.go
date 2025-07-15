@@ -945,7 +945,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Avito FE Tech Internship 2025 Wave 2 API",
+	Title:            "project-management-system API",
 	Description:      "API для управления задачами и досками",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
