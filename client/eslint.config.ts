@@ -1,14 +1,13 @@
-// eslint.config.js
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import type { Linter } from 'eslint';
 import reactPlugin from 'eslint-plugin-react';
 import hooksPlugin from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh'; // У вас уже есть
+import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
 	{
-		// Глобальные настройки для всех файлов .ts, .tsx
 		files: ['**/*.{ts,tsx}'],
 		ignores: ['vite.config.ts'],
 		languageOptions: {
@@ -36,7 +35,6 @@ export default tseslint.config(
 			reactPlugin.configs.flat.recommended,
 		],
 		rules: {
-			// TypeScript правила
 			'@typescript-eslint/no-unused-vars': [
 				'warn',
 				{ argsIgnorePattern: '^_' },
@@ -44,22 +42,18 @@ export default tseslint.config(
 			'@typescript-eslint/explicit-function-return-type': 'off',
 			'@typescript-eslint/no-explicit-any': 'warn',
 
-			// React правила
 			'react/react-in-jsx-scope': 'off',
 			'react/prop-types': 'off',
 			'react/jsx-uses-react': 'off',
 
-			// React Hooks
 			'react-hooks/rules-of-hooks': 'error',
 			'react-hooks/exhaustive-deps': 'warn',
 
-			// React Refresh
 			'react-refresh/only-export-components': [
 				'warn',
 				{ allowConstantExport: true },
 			],
 
-			// Accessibility
 			'jsx-a11y/alt-text': 'warn',
 			'jsx-a11y/anchor-is-valid': 'warn',
 		},
@@ -70,12 +64,11 @@ export default tseslint.config(
 		},
 	},
 	{
-		// Настройки для конфигурационных файлов JS
 		files: ['eslint.config.js', 'vite.config.ts', '*.config.js'],
 		languageOptions: {
 			parserOptions: {
 				ecmaVersion: 'latest',
-				sourceType: 'module', // Для vite.config.ts
+				sourceType: 'module',
 			},
 			globals: {
 				...globals.node,
